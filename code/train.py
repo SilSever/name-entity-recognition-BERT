@@ -34,7 +34,7 @@ class NER:
             num_labels=len(self.tag2idx),
             output_attentions=False,
             output_hidden_states=False
-        )
+        ).to(self.device)
 
         self.train_data, self.train_sampler, self.train_dataloader, self.valid_data, self.valid_sampler, self.valid_dataloader = self.preprocessing()
 

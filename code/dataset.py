@@ -35,4 +35,4 @@ class Dataset:
         labels = [[s[2] for s in sentence] for sentence in self.sentences]
         tag2idx, tag_values = self._tag2idx()
         return features, labels, tag2idx, tag_values
-    
+
