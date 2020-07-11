@@ -18,8 +18,7 @@ class Predicter():
             Config.MODEL,
             num_labels=len(self.tag2idx),
             output_attentions=False,
-            output_hidden_states=False,
-            from_pt=True
+            output_hidden_states=False
         )
         self.tokenizer = tr.BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
 
