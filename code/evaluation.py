@@ -13,13 +13,14 @@ class Predicter():
         """
         self.tag2idx = tag2idx
         self.tag_values = tag_values
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.model = tr.BertForTokenClassification.from_pretrained(
             Config.MODEL,
             num_labels=len(self.tag2idx),
             output_attentions=False,
             output_hidden_states=False
-        )
+        ).to(self.device)
         self.tokenizer = tr.BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
 
         tokenized_sentence = self.tokenizer.encode(self.test_sentence)
@@ -30,7 +31,7 @@ class Predicter():
         input_ids = torch.tensor([tokenized_sentence]).cuda()
 
         with torch.no_grad():
-            output = model(input_ids)
+            output = self.model(input_ids)
         label_indices = np.argmax(output[0].to('cpu').numpy(), axis=2)
 
         # join bpe split tokens
