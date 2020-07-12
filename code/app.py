@@ -3,17 +3,18 @@ import evaluation
 import train
 from config import Config
 
-def main():
+
+def main() -> None:
+    """
+    Main function
+    :return: None
+    """
     data = dataset.Dataset(Config.DATASET)
-    features, labels, tag2idx, tag_values = data.load_features_and_labels()
+    features, labels, test, test_lab, tag2idx, tag_values = data.load_train_test()
 
     train.NER(features, labels, tag2idx, tag_values)
 
-    evaluation.Predicter(tag2idx, tag_values)
-
-    print(features[0])
-    print(labels[0])
-
+    evaluation.Predicter(test, test_lab, tag2idx, tag_values)
 
 
 if __name__ == "__main__":
