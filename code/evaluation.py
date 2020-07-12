@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 import numpy as np
 import torch
@@ -45,15 +45,21 @@ class Predicter:
         Predict the NER classes
         :return: None
         """
-        for sentence in self.test_sentences:
-            tk_sentence = self.tokenizer.encode(sentence)
-            self._predict(tk_sentence)
+        with open(Config.PREDICTION, mode='w') as out_file:
 
-    def _predict(self, tk_sentence: List):
+            for sentence in self.test_sentences:
+                tk_sentence = self.tokenizer.encode(sentence)
+                tokens, labels = self._predict(tk_sentence)
+
+                for token, label in zip(tokens, labels):
+                    out_file.write("{}:{} ".format(token, label))
+                out_file.write("\n")
+
+    def _predict(self, tk_sentence: List) -> Tuple[List, List]:
         """
         Supporting function to predict
         :param tk_sentence: tokenized sentences to predict
-        :return: None
+        :return: predicted_tokens and predicted labels
         """
         input_ids = torch.tensor([tk_sentence]).cuda()
 
@@ -64,18 +70,13 @@ class Predicter:
         tokens = self.tokenizer.convert_ids_to_tokens(input_ids.to("cpu").numpy()[0])
 
         computed_tokens, computed_labels = [], []
-        for token, label_id in zip(tokens, label_ind[0]):
+        for token, label_id in zip(tokens[1:-1], label_ind[0][1:-1]):
             if token.startswith("##"):
                 computed_tokens[-1] = computed_tokens[-1] + token[2:]
             else:
                 computed_labels.append(self.tag_values[label_id])
                 computed_tokens.append(token)
 
-        self._write_predictions(computed_tokens, computed_labels, Config.PREDICTION)
+        return computed_tokens, computed_labels
 
-    @staticmethod
-    def _write_predictions(computed_tokens, computed_labels, out_path):
-        with open(out_path, mode='w') as out_file:
-            for token, label in zip(computed_tokens, computed_labels):
-                out_file.write("{}\t{}".format(label, token))
-            out_file.write("\n")
+        # self._write_predictions(computed_tokens, computed_labels, Config.PREDICTION)
