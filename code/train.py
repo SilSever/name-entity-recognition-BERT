@@ -176,6 +176,10 @@ class NER:
         return optimizer
 
     def train(self) -> None:
+        """
+        Training function
+        :return: None
+        """
         total_steps = len(self.train_dataloader) * self.epochs
 
         scheduler = tr.get_linear_schedule_with_warmup(
