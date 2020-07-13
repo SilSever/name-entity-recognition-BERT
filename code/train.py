@@ -15,7 +15,7 @@ from config import Config
 
 class NER:
     def __init__(
-            self, feautres: List, labels: List, tag2idx: Dict, tag_values: List
+        self, feautres: List, labels: List, tag2idx: Dict, tag_values: List
     ) -> None:
         """
         NER init function
@@ -85,12 +85,8 @@ class NER:
             for sent, labs in zip(self.features, self.labels)
         ]
 
-        tokens = [
-            token_label_pair[0] for token_label_pair in tokenized_txts_labs
-        ]
-        labels = [
-            token_label_pair[1] for token_label_pair in tokenized_txts_labs
-        ]
+        tokens = [token_label_pair[0] for token_label_pair in tokenized_txts_labs]
+        labels = [token_label_pair[1] for token_label_pair in tokenized_txts_labs]
 
         return tokens, labels
 
@@ -117,7 +113,9 @@ class NER:
             truncating="post",
         )
 
-        attention_masks = [[float(i != 0.0) for i in input_id] for input_id in input_ids]
+        attention_masks = [
+            [float(i != 0.0) for i in input_id] for input_id in input_ids
+        ]
 
         tr_inputs, val_inputs, tr_tags, val_tags = train_test_split(
             input_ids, tags, random_state=2018, test_size=0.1
@@ -140,9 +138,7 @@ class NER:
 
         val_data = TensorDataset(val_inputs, val_masks, val_tags)
         val_dataloader = DataLoader(
-            val_data,
-            sampler=SequentialSampler(val_data),
-            batch_size=self.batch_size,
+            val_data, sampler=SequentialSampler(val_data), batch_size=self.batch_size
         )
 
         return tr_dataloader, val_dataloader
@@ -152,27 +148,31 @@ class NER:
         Set the parameters needed for the optimizer
         :return: the optimizer
         """
-
-        def _opt_group(n_decay: List, decay_rate: float) -> Dict:
-            return {
-                "params": [
-                    p for n, p in optimizer if not any(nd in n for nd in n_decay)
-                ],
-                "weight_decay_rate": decay_rate,
-            }
-
         if self.finetuning:
-            optimizer = list(self.model.named_parameters())
-            no_decay = ["bias", "gamma", "beta"]
-            optimizer_grouped = [
-                _opt_group(no_decay, decay_rate=0.01), _opt_group(no_decay, decay_rate=0.0)
+            params = list(self.model.named_parameters())
+            optimizer_params = [
+                {
+                    "params": [
+                        p
+                        for n, p in params
+                        if not any(nd in n for nd in ["bias", "gamma", "beta"])
+                    ],
+                    "weight_decay_rate": 0.01,
+                },
+                {
+                    "params": [
+                        p
+                        for n, p in params
+                        if any(nd in n for nd in ["bias", "gamma", "beta"])
+                    ],
+                    "weight_decay_rate": 0.0,
+                },
             ]
         else:
-            optimizer = list(self.model.classifier.named_parameters())
-            optimizer_grouped = [{"params": [p for n, p in optimizer]}]
+            params = list(self.model.classifier.named_parameters())
+            optimizer_params = [{"params": [p for n, p in params]}]
 
-        optimizer = tr.AdamW(optimizer_grouped, lr=3e-5, eps=1e-8)
-
+        optimizer = tr.AdamW(optimizer_params, lr=3e-5, eps=1e-8)
         return optimizer
 
     def train(self) -> None:
@@ -250,7 +250,9 @@ class NER:
 
         utils.plot_losses(loss_values, val_loss_values)
 
-    def _print_metrics(self, eval_loss: float, predictions: List, true_labels: List) -> None:
+    def _print_metrics(
+        self, eval_loss: float, predictions: List, true_labels: List
+    ) -> None:
         """
         Print training metrics
         :param eval_loss: evaluations losses
@@ -271,7 +273,5 @@ class NER:
             for l_i in lab
             if self.tag_values[l_i] != "PAD"
         ]
-        print(
-            "Validation Accuracy: {}".format(accuracy_score(pred_tags, valid_tags))
-        )
+        print("Validation Accuracy: {}".format(accuracy_score(pred_tags, valid_tags)))
         print("Validation F1-Score: {}\n".format(f1_score(pred_tags, valid_tags)))
