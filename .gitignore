@@ -708,3 +708,4 @@ MigrationBackup/
 .ionide/
 
 # End of https://www.toptal.com/developers/gitignore/api/web,git,pycharm,jetbrains,jupyternotebooks,python,ssh,code,visualstudio,visualstudiocode
+/resources/

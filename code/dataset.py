@@ -3,6 +3,8 @@ from typing import Tuple, List, Dict, Union
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+import utils
+
 
 class Dataset:
     def __init__(self, file_path: str) -> None:
@@ -10,7 +12,7 @@ class Dataset:
         Dataset init function
         :param file_path: dataset path
         """
-        self.TEST_SET = False
+        self.test_set = False
         self.file_path = file_path
 
         self.data = pd.read_csv(self.file_path, encoding="latin1").fillna(
@@ -56,19 +58,25 @@ class Dataset:
         test = []
         test_lab = []
 
-        if self.TEST_SET:
-            features = [[word[0] for word in sentence] for sentence in self.sentences]
-            labels = [[sent[2] for sent in sentence] for sentence in self.sentences]
+        if self.test_set:
+            features = [[field[0] for field in fields] for fields in self.sentences]
+            labels = [[field[2] for field in fields] for fields in self.sentences]
 
         else:
-            features = [" ".join([field[0] for field in fields]) for fields in self.sentences]
-            labels = [" ".join([field[2] for field in fields]) for fields in self.sentences]
+            # features = [" ".join([field[0] for field in fields]) for fields in self.sentences]
+            # labels = [" ".join([field[2] for field in fields]) for fields in self.sentences]
+
+            features = [[field[0] for field in fields] for fields in self.sentences]
+            labels = [[field[2] for field in fields] for fields in self.sentences]
 
             train, test, tr_labels, test_lab = train_test_split(
-                features, labels, random_state=2018, test_size=0.1
+                features, labels, test_size=0.1
             )
 
-            features = [feature.split() for feature in train]
-            labels = [label.split() for label in tr_labels]
+            utils.check_integrity(train, tr_labels, desc='Train')
+            utils.check_integrity(test, test_lab, desc='Test')
+
+            # features = [feature.split() for feature in train]
+            # labels = [label.split() for label in tr_labels]
 
         return features, labels, test, test_lab, tag2idx, tag
