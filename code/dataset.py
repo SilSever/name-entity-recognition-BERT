@@ -63,8 +63,6 @@ class Dataset:
             labels = [[field[2] for field in fields] for fields in self.sentences]
 
         else:
-            # features = [" ".join([field[0] for field in fields]) for fields in self.sentences]
-            # labels = [" ".join([field[2] for field in fields]) for fields in self.sentences]
 
             features = [[field[0] for field in fields] for fields in self.sentences]
             labels = [[field[2] for field in fields] for fields in self.sentences]
@@ -73,10 +71,7 @@ class Dataset:
                 features, labels, test_size=0.1, shuffle=False
             )
 
-            utils.check_integrity(train, tr_labels, desc='Train')
-            utils.check_integrity(test, test_lab, desc='Test')
-
-            # features = [feature.split() for feature in train]
-            # labels = [label.split() for label in tr_labels]
+            utils.check_integrity(train, tr_labels, desc="Train")
+            utils.check_integrity(test, test_lab, desc="Test")
 
         return features, labels, test, test_lab, tag2idx, tag

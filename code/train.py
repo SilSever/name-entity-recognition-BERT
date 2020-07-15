@@ -7,7 +7,7 @@ from keras.preprocessing.sequence import pad_sequences
 from seqeval.metrics import f1_score, accuracy_score
 from sklearn.model_selection import train_test_split
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
-from tqdm import trange, tqdm
+from tqdm import tqdm
 
 import utils
 from config import Config
@@ -53,7 +53,7 @@ class NER:
 
         self.optimizer = self.set_optimizer()
 
-        self.train()
+        # self.train()
 
     def _compute_tokens_and_labels(self, sent: str, labs: List) -> Tuple[List, List]:
         """
@@ -176,7 +176,7 @@ class NER:
         optimizer = tr.AdamW(optimizer_params, lr=3e-5, eps=1e-8)
         return optimizer
 
-    def train(self) -> None:
+    def train(self) -> tr.BertForTokenClassification:
         """
         Training function
         :return: None
@@ -251,9 +251,10 @@ class NER:
 
             self._print_metrics(eval_loss, predictions, true_labels)
 
-        self.model.save_pretrained(Config.MODEL)
-
         utils.plot_losses(loss_values, val_loss_values)
+
+        self.model.save_pretrained(Config.MODEL)
+        return self.model
 
     def _print_metrics(
         self, eval_loss: float, predictions: List, true_labels: List

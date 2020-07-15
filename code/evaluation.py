@@ -3,13 +3,20 @@ from typing import List, Dict, Tuple
 import numpy as np
 import torch
 import transformers as tr
+from sklearn.metrics import f1_score, precision_score, recall_score
 
 from config import Config
-from sklearn.metrics import f1_score
 
 
 class Predicter:
-    def __init__(self, test: List, labels: List, tag2idx: Dict, tag_values: List) -> None:
+    def __init__(
+        self,
+        test: List,
+        labels: List,
+        tag2idx: Dict,
+        tag_values: List,
+        model: tr.BertForTokenClassification = None,
+    ) -> None:
         """
         Predicter init function
         :param test: list of test sentences
@@ -23,17 +30,16 @@ class Predicter:
         self.tag_values = tag_values
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.test_sentence = """
-        Mr. Trump’s tweets began just moments after a Fox News report by Mike Tobin, a 
-        reporter for the network, about protests in Minnesota and elsewhere. 
-        """
+        if model is None:
+            self.model = tr.BertForTokenClassification.from_pretrained(
+                Config.MODEL,
+                num_labels=len(self.tag2idx),
+                output_attentions=False,
+                output_hidden_states=False,
+            ).to(self.device)
+        else:
+            self.model = model
 
-        self.model = tr.BertForTokenClassification.from_pretrained(
-            Config.MODEL,
-            num_labels=len(self.tag2idx),
-            output_attentions=False,
-            output_hidden_states=False,
-        ).to(self.device)
         self.tokenizer = tr.BertTokenizer.from_pretrained(
             Config.BERT_MODEL, do_lower_case=False
         )
@@ -42,22 +48,33 @@ class Predicter:
 
     def predict(self) -> None:
         """
-        Predict the NER classes
+        Predict the NER classes and compute the metrics
         :return: None
         """
-        with open(Config.PREDICTION, mode='w') as out_file:
 
-            for tk_sentence, or_label in zip([self.test_sentence], [""]):
+        tot_predicted = []
+        tot_labels = []
+
+        with open(Config.PREDICTION, mode="w") as out_file:
+
+            for tk_sentence, or_label in zip(self.test_sentences, self.test_labels):
                 tk_sentence = self.tokenizer.encode(tk_sentence)
-                tokens, pr_labels, tmp = self._predict(tk_sentence)
+                tokens, pr_labels, tmp_pred = self._predict(tk_sentence)
 
                 tmp_label = [self.tag2idx[lb] for lb in or_label]
-                f1 = f1_score(tmp_label, tmp, average='micro')
-                # print(pr_labels,"\n", tmp, "\n", or_label, "\n", tmp_label, "\n",  f1,"\n\n")
+
+                tot_predicted.extend(tmp_pred)
+                tot_labels.extend(tmp_label)
 
                 for token, label in zip(tokens, pr_labels):
                     out_file.write("{}:{} ".format(token, label))
                 out_file.write("\n")
+
+        f1 = f1_score(tot_predicted, tot_labels, average="micro")
+        pr = precision_score(tot_predicted, tot_labels, average="micro")
+        rc = recall_score(tot_predicted, tot_labels, average="micro")
+
+        print("F1 score: {}\tPrecision: {}\tRecall: {}".format(f1, pr, rc))
 
     def _predict(self, tk_sentence: List) -> Tuple[List, List, List]:
         """
@@ -82,5 +99,3 @@ class Predicter:
                 computed_tokens.append(token)
 
         return computed_tokens, computed_labels, label_ind[0][1:-1]
-
-        # self._write_predictions(computed_tokens, computed_labels, Config.PREDICTION)
