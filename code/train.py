@@ -55,33 +55,32 @@ class NER:
 
         self.train()
 
+    def _compute_tokens_and_labels(self, sent: str, labs: List) -> Tuple[List, List]:
+        """
+        Supporting function to the main one
+        :param sent: sentence to be tokenized
+        :param labs: labels to be tokenized
+        :return: tokens list and labels list
+        """
+        tk_sent = []
+        tk_lab = []
+
+        for word, label in zip(sent, labs):
+            tk_words = self.tokenizer.tokenize(word)
+            subwords = len(tk_words)
+
+            tk_sent.extend(tk_words)
+            tk_lab.extend([label] * subwords)
+
+        return tk_sent, tk_lab
+
     def tokens_and_labels(self) -> Tuple[List, List]:
         """
         Compute the tokens and the labels to be trained
         :return: tokens list and labels list
         """
-
-        def _compute_tokens_and_labels(sent: str, labs: List) -> Tuple[List, List]:
-            """
-            Supporting function to the main one
-            :param sent: sentence to be tokenized
-            :param labs: labels to be tokenized
-            :return: tokens list and labels list
-            """
-            tk_sent = []
-            tk_lab = []
-
-            for word, label in zip(sent, labs):
-                tk_words = self.tokenizer.tokenize(word)
-                subwords = len(tk_words)
-
-                tk_sent.extend(tk_words)
-                tk_lab.extend([label] * subwords)
-
-            return tk_sent, tk_lab
-
         tokenized_txts_labs = [
-            _compute_tokens_and_labels(sent, labs)
+            self._compute_tokens_and_labels(sent, labs)
             for sent, labs in zip(self.features, self.labels)
         ]
 
@@ -141,6 +140,8 @@ class NER:
             val_data, sampler=SequentialSampler(val_data), batch_size=self.batch_size
         )
 
+        print(tr_data[0][0])
+        print(val_data[0][0])
         return tr_dataloader, val_dataloader
 
     def set_optimizer(self) -> tr.AdamW:

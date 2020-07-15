@@ -23,6 +23,11 @@ class Predicter:
         self.tag_values = tag_values
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+        self.test_sentence = """
+        Mr. Trump’s tweets began just moments after a Fox News report by Mike Tobin, a 
+        reporter for the network, about protests in Minnesota and elsewhere. 
+        """
+
         self.model = tr.BertForTokenClassification.from_pretrained(
             Config.MODEL,
             num_labels=len(self.tag2idx),
@@ -33,44 +38,7 @@ class Predicter:
             Config.BERT_MODEL, do_lower_case=False
         )
 
-        self.tokens, self.labels = self.tokens_and_labels()
-
         self.predict()
-
-    def tokens_and_labels(self) -> Tuple[List, List]:
-        """
-        Compute the tokens and the labels to be trained
-        :return: tokens list and labels list
-        """
-
-        def _compute_tokens_and_labels(sent: str, labs: List) -> Tuple[List, List]:
-            """
-            Supporting function to the main one
-            :param sent: sentence to be tokenized
-            :param labs: labels to be tokenized
-            :return: tokens list and labels list
-            """
-            tk_sent = []
-            tk_lab = []
-
-            for word, label in zip(sent, labs):
-                tk_words = self.tokenizer.tokenize(word)
-                subwords = len(tk_words)
-
-                tk_sent.extend(tk_words)
-                tk_lab.extend([label] * subwords)
-
-            return tk_sent, tk_lab
-
-        tokenized_txts_labs = [
-            _compute_tokens_and_labels(sent, labs)
-            for sent, labs in zip(self.test_sentences, self.test_labels)
-        ]
-
-        tokens = [token_label_pair[0] for token_label_pair in tokenized_txts_labs]
-        labels = [token_label_pair[1] for token_label_pair in tokenized_txts_labs]
-
-        return tokens, labels
 
     def predict(self) -> None:
         """
@@ -79,7 +47,7 @@ class Predicter:
         """
         with open(Config.PREDICTION, mode='w') as out_file:
 
-            for tk_sentence, or_label in zip(self.tokens, self.labels):
+            for tk_sentence, or_label in zip([self.test_sentence], [""]):
                 tk_sentence = self.tokenizer.encode(tk_sentence)
                 tokens, pr_labels, tmp = self._predict(tk_sentence)
 
@@ -101,9 +69,9 @@ class Predicter:
 
         with torch.no_grad():
             output = self.model(input_ids)
-        label_ind = np.argmax(output[0].to(self.device).numpy(), axis=2)
+        label_ind = np.argmax(output[0].to("cpu").numpy(), axis=2)
 
-        tokens = self.tokenizer.convert_ids_to_tokens(input_ids.to(self.device).numpy()[0])
+        tokens = self.tokenizer.convert_ids_to_tokens(input_ids.to("cpu").numpy()[0])
 
         computed_tokens, computed_labels = [], []
         for token, label_id in zip(tokens[1:-1], label_ind[0][1:-1]):

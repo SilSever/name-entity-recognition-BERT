@@ -70,7 +70,7 @@ class Dataset:
             labels = [[field[2] for field in fields] for fields in self.sentences]
 
             train, test, tr_labels, test_lab = train_test_split(
-                features, labels, test_size=0.1
+                features, labels, test_size=0.1, shuffle=False
             )
 
             utils.check_integrity(train, tr_labels, desc='Train')
