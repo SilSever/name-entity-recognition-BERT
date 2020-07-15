@@ -140,8 +140,6 @@ class NER:
             val_data, sampler=SequentialSampler(val_data), batch_size=self.batch_size
         )
 
-        print(tr_data[0][0])
-        print(val_data[0][0])
         return tr_dataloader, val_dataloader
 
     def set_optimizer(self) -> tr.AdamW:
