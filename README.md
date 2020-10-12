@@ -1,1 +1,1 @@
-# word-sense-disambiguation-BERT
+# name-entity-recognition-BERT
